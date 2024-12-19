@@ -1,6 +1,7 @@
 package model;
 
 import lombok.Getter;
+import weka.classifiers.trees.J48;
 import weka.core.Instances;
 import weka.core.Utils;
 import weka.core.converters.ConverterUtils.DataSource;
@@ -14,8 +15,11 @@ import weka.attributeSelection.AttributeSelection;
 public class Data {
 
     private Instances data;
+    private String importantFeatures;
+    private J48 decisionTree;
 
     public Data(String filename) {
+        decisionTree = null;
         try {
             DataSource dataSrc = new DataSource(filename);
             data = dataSrc.getDataSet();
@@ -25,6 +29,9 @@ public class Data {
         }
     }
 
+    /**
+     *  This filters and selects the most important features and simplify the data set
+     */
     public void setData() {
         Instances res = new Instances(this.data);
         Remove rm = new Remove();
@@ -45,7 +52,7 @@ public class Data {
             attSelect.SelectAttributes(res);
 
             int[] indices = attSelect.selectedAttributes();
-            System.out.println("Selected Attributes: " + Utils.arrayToString(indices));
+            this.importantFeatures = Utils.arrayToString(indices);
 
             this.data = res;
 
@@ -55,4 +62,21 @@ public class Data {
     }
 
 
+    /**
+     *  This creates the decision tree (un-pruned tree)
+     */
+    public void makeDecisionTree() {
+        J48 decisionTree = new J48();
+
+        try {
+
+            decisionTree.setOptions(new String[] {"-U"});
+            decisionTree.buildClassifier(this.data);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error processing decision tree: " + e.getMessage());
+        }
+
+        this.decisionTree = decisionTree;
+    }
 }
